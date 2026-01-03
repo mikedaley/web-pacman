@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Sprite Debug</title>
+  <style>
+    body { background: #333; color: white; font-family: monospace; }
+    .container { display: flex; gap: 20px; flex-wrap: wrap; }
+    .sprite-box { background: #000; padding: 10px; }
+    img { image-rendering: pixelated; }
+    canvas { image-rendering: pixelated; background: #000; border: 1px solid #666; }
+    #coords { position: fixed; top: 10px; right: 10px; background: rgba(0,0,0,0.8); padding: 10px; }
+    .grid { display: grid; grid-template-columns: repeat(16, 8px); gap: 0; }
+    .grid-cell { width: 8px; height: 8px; border: 1px solid #444; box-sizing: border-box; }
+  </style>
+</head>
+<body>
+  <h1>Sprite Sheet Analysis</h1>
+  <div id="coords">Hover over sprites</div>
+
+  <h2>sprites.png (680x248)</h2>
+  <div class="sprite-box">
+    <canvas id="sprites-canvas" width="680" height="248"></canvas>
+  </div>
+
+  <h2>text.png (128x224)</h2>
+  <div class="sprite-box">
+    <canvas id="text-canvas" width="128" height="224"></canvas>
+  </div>
+
+  <script>
+    const spritesImg = new Image();
+    const textImg = new Image();
+
+    spritesImg.onload = () => {
+      const canvas = document.getElementById('sprites-canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(spritesImg, 0, 0);
+
+      canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.floor(e.clientX - rect.left);
+        const y = Math.floor(e.clientY - rect.top);
+        const tileX = Math.floor(x / 8);
+        const tileY = Math.floor(y / 8);
+        const tile16X = Math.floor(x / 16);
+        const tile16Y = Math.floor(y / 16);
+        document.getElementById('coords').innerHTML =
+          `Pixel: (${x}, ${y})<br>` +
+          `8x8 tile: (${tileX}, ${tileY}) = offset (${tileX*8}, ${tileY*8})<br>` +
+          `16x16 tile: (${tile16X}, ${tile16Y}) = offset (${tile16X*16}, ${tile16Y*16})`;
+      });
+    };
+    spritesImg.src = 'public/sprites/sprites.png';
+
+    textImg.onload = () => {
+      const canvas = document.getElementById('text-canvas');
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(textImg, 0, 0);
+
+      canvas.addEventListener('mousemove', (e) => {
+        const rect = canvas.getBoundingClientRect();
+        const x = Math.floor(e.clientX - rect.left);
+        const y = Math.floor(e.clientY - rect.top);
+        const tileX = Math.floor(x / 8);
+        const tileY = Math.floor(y / 8);
+        document.getElementById('coords').innerHTML =
+          `Pixel: (${x}, ${y})<br>` +
+          `8x8 char: (${tileX}, ${tileY}) = offset (${tileX*8}, ${tileY*8})<br>` +
+          `Char index: ${tileY * 16 + tileX}`;
+      });
+    };
+    textImg.src = 'public/sprites/text.png';
+  </script>
+</body>
+</html>

@@ -1,0 +1,480 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Pacman Sprite Extractor - Complete</title>
+  <style>
+    body { font-family: monospace; background: #1a1a2e; color: #eee; padding: 20px; }
+    canvas { border: 1px solid #444; margin: 10px 0; image-rendering: pixelated; background: #000; }
+    .section { margin: 20px 0; padding: 15px; background: #16213e; border-radius: 8px; }
+    h1 { color: #e94560; }
+    h2 { color: #0ff; margin-top: 0; }
+    h3 { color: #ff6; }
+    .info { color: #888; font-size: 12px; }
+    button { padding: 10px 20px; font-size: 14px; cursor: pointer; margin: 5px; background: #e94560; color: white; border: none; border-radius: 4px; }
+    button:hover { background: #ff6b6b; }
+    .flex { display: flex; gap: 20px; flex-wrap: wrap; }
+    .preview { display: inline-block; margin: 5px; text-align: center; }
+    .preview canvas { display: block; margin: 0 auto; }
+    .preview span { font-size: 10px; color: #888; }
+    #coords { color: #0f0; font-size: 14px; padding: 10px; background: #000; border-radius: 4px; }
+    .scale-container { display: flex; align-items: center; gap: 10px; margin: 10px 0; }
+    input[type="range"] { width: 200px; }
+    table { border-collapse: collapse; margin: 10px 0; }
+    td, th { padding: 5px 10px; border: 1px solid #333; text-align: left; }
+    th { background: #0a3d62; }
+  </style>
+</head>
+<body>
+  <h1>🎮 Pacman Complete Sprite Extractor</h1>
+
+  <div class="section">
+    <h2>Original Sprite Sheet</h2>
+    <div class="scale-container">
+      <label>Zoom: </label>
+      <input type="range" id="scaleSlider" min="1" max="4" step="0.5" value="1">
+      <span id="scaleValue">1x</span>
+    </div>
+    <canvas id="original"></canvas>
+    <p id="coords">Click on sprite sheet to see coordinates</p>
+  </div>
+
+  <div class="section">
+    <h2>Sprite Coordinate Mapper</h2>
+    <p class="info">Click tiles on the original sprite sheet to map them. Current sprite type:</p>
+    <select id="spriteType">
+      <option value="pacman-right">Pacman Right</option>
+      <option value="pacman-left">Pacman Left</option>
+      <option value="pacman-up">Pacman Up</option>
+      <option value="pacman-down">Pacman Down</option>
+      <option value="pacman-death">Pacman Death</option>
+      <option value="ghost-blinky">Ghost Blinky (Red)</option>
+      <option value="ghost-pinky">Ghost Pinky (Pink)</option>
+      <option value="ghost-inky">Ghost Inky (Cyan)</option>
+      <option value="ghost-clyde">Ghost Clyde (Orange)</option>
+      <option value="ghost-frightened">Ghost Frightened</option>
+      <option value="ghost-eyes">Ghost Eyes</option>
+      <option value="fruits">Fruits</option>
+      <option value="pellet">Pellets</option>
+      <option value="maze-tile">Maze Tiles</option>
+    </select>
+    <button id="clearMapping">Clear Current Mapping</button>
+    <button id="autoDetect">Auto-Detect All</button>
+    <div id="currentMapping"></div>
+  </div>
+
+  <div class="section">
+    <h2>Extracted Sprites Preview</h2>
+    <div class="flex" id="previews"></div>
+  </div>
+
+  <div class="section">
+    <h2>Generated Sprite Sheet</h2>
+    <canvas id="output"></canvas>
+    <br>
+    <button id="generate">Generate Organized Sprite Sheet</button>
+    <button id="download">Download PNG</button>
+    <button id="exportCode">Export Code</button>
+  </div>
+
+  <div class="section">
+    <h2>Generated Code</h2>
+    <pre id="codeOutput" style="background: #000; padding: 15px; overflow-x: auto; max-height: 400px;"></pre>
+  </div>
+
+  <script>
+    const originalCanvas = document.getElementById('original');
+    const outputCanvas = document.getElementById('output');
+    const origCtx = originalCanvas.getContext('2d');
+    const outCtx = outputCanvas.getContext('2d');
+
+    let scale = 1;
+    let img = null;
+
+    // Sprite mappings - organized by type
+    const spriteMappings = {
+      // Pacman sprites (16x16 each, 3 frames per direction)
+      'pacman-right': [],
+      'pacman-left': [],
+      'pacman-up': [],
+      'pacman-down': [],
+      'pacman-death': [],
+
+      // Ghost sprites (16x16 each)
+      'ghost-blinky': [],
+      'ghost-pinky': [],
+      'ghost-inky': [],
+      'ghost-clyde': [],
+      'ghost-frightened': [],
+      'ghost-eyes': [],
+
+      // Other sprites
+      'fruits': [],
+      'pellet': [],
+      'maze-tile': [],
+    };
+
+    // Auto-detected sprite coordinates based on analysis
+    const autoDetectedSprites = {
+      // Pacman - analyzing the sprite sheet layout
+      // The sprite area starts at x=456 after the two 224px maze images
+      // Row structure in the sprite area:
+      'pacman-right': [
+        { x: 456, y: 0, w: 16, h: 16 },   // Frame 0
+        { x: 472, y: 0, w: 16, h: 16 },   // Frame 1
+        { x: 488, y: 0, w: 16, h: 16 },   // Frame 2
+      ],
+      'pacman-left': [
+        { x: 456, y: 16, w: 16, h: 16 },
+        { x: 472, y: 16, w: 16, h: 16 },
+        { x: 488, y: 16, w: 16, h: 16 },
+      ],
+      'pacman-up': [
+        { x: 456, y: 32, w: 16, h: 16 },
+        { x: 472, y: 32, w: 16, h: 16 },
+        { x: 488, y: 32, w: 16, h: 16 },
+      ],
+      'pacman-down': [
+        { x: 456, y: 48, w: 16, h: 16 },
+        { x: 472, y: 48, w: 16, h: 16 },
+        { x: 488, y: 48, w: 16, h: 16 },
+      ],
+      'pacman-death': [
+        { x: 504, y: 0, w: 16, h: 16 },
+        { x: 520, y: 0, w: 16, h: 16 },
+        { x: 536, y: 0, w: 16, h: 16 },
+        { x: 552, y: 0, w: 16, h: 16 },
+        { x: 568, y: 0, w: 16, h: 16 },
+        { x: 584, y: 0, w: 16, h: 16 },
+        { x: 600, y: 0, w: 16, h: 16 },
+        { x: 616, y: 0, w: 16, h: 16 },
+        { x: 632, y: 0, w: 16, h: 16 },
+        { x: 648, y: 0, w: 16, h: 16 },
+        { x: 664, y: 0, w: 16, h: 16 },
+      ],
+
+      // Ghosts - 8 frames each (2 per direction: R, L, U, D)
+      'ghost-blinky': [
+        { x: 456, y: 64, w: 16, h: 16 }, { x: 472, y: 64, w: 16, h: 16 },  // Right
+        { x: 488, y: 64, w: 16, h: 16 }, { x: 504, y: 64, w: 16, h: 16 },  // Left
+        { x: 520, y: 64, w: 16, h: 16 }, { x: 536, y: 64, w: 16, h: 16 },  // Up
+        { x: 552, y: 64, w: 16, h: 16 }, { x: 568, y: 64, w: 16, h: 16 },  // Down
+      ],
+      'ghost-pinky': [
+        { x: 456, y: 80, w: 16, h: 16 }, { x: 472, y: 80, w: 16, h: 16 },
+        { x: 488, y: 80, w: 16, h: 16 }, { x: 504, y: 80, w: 16, h: 16 },
+        { x: 520, y: 80, w: 16, h: 16 }, { x: 536, y: 80, w: 16, h: 16 },
+        { x: 552, y: 80, w: 16, h: 16 }, { x: 568, y: 80, w: 16, h: 16 },
+      ],
+      'ghost-inky': [
+        { x: 456, y: 96, w: 16, h: 16 }, { x: 472, y: 96, w: 16, h: 16 },
+        { x: 488, y: 96, w: 16, h: 16 }, { x: 504, y: 96, w: 16, h: 16 },
+        { x: 520, y: 96, w: 16, h: 16 }, { x: 536, y: 96, w: 16, h: 16 },
+        { x: 552, y: 96, w: 16, h: 16 }, { x: 568, y: 96, w: 16, h: 16 },
+      ],
+      'ghost-clyde': [
+        { x: 456, y: 112, w: 16, h: 16 }, { x: 472, y: 112, w: 16, h: 16 },
+        { x: 488, y: 112, w: 16, h: 16 }, { x: 504, y: 112, w: 16, h: 16 },
+        { x: 520, y: 112, w: 16, h: 16 }, { x: 536, y: 112, w: 16, h: 16 },
+        { x: 552, y: 112, w: 16, h: 16 }, { x: 568, y: 112, w: 16, h: 16 },
+      ],
+      'ghost-frightened': [
+        { x: 456, y: 128, w: 16, h: 16 }, { x: 472, y: 128, w: 16, h: 16 },  // Blue
+        { x: 488, y: 128, w: 16, h: 16 }, { x: 504, y: 128, w: 16, h: 16 },  // White flash
+      ],
+      'ghost-eyes': [
+        { x: 456, y: 144, w: 16, h: 16 },  // Right
+        { x: 472, y: 144, w: 16, h: 16 },  // Left
+        { x: 488, y: 144, w: 16, h: 16 },  // Up
+        { x: 504, y: 144, w: 16, h: 16 },  // Down
+      ],
+
+      // Fruits (16x16 each)
+      'fruits': [
+        { x: 456, y: 48, w: 16, h: 16 },   // Cherry
+        { x: 472, y: 48, w: 16, h: 16 },   // Strawberry
+        { x: 488, y: 48, w: 16, h: 16 },   // Orange
+        { x: 504, y: 48, w: 16, h: 16 },   // Apple
+        { x: 520, y: 48, w: 16, h: 16 },   // Grapes
+        { x: 536, y: 48, w: 16, h: 16 },   // Galaxian
+        { x: 552, y: 48, w: 16, h: 16 },   // Bell
+        { x: 568, y: 48, w: 16, h: 16 },   // Key
+      ],
+
+      // Pellets (8x8)
+      'pellet': [
+        { x: 584, y: 48, w: 8, h: 8 },     // Small pellet
+        { x: 584, y: 56, w: 8, h: 8 },     // Power pellet
+      ],
+    };
+
+    // Load sprite sheet
+    function loadImage() {
+      img = new Image();
+      img.onload = () => {
+        drawOriginal();
+        // Copy auto-detected to mappings
+        Object.keys(autoDetectedSprites).forEach(key => {
+          spriteMappings[key] = [...autoDetectedSprites[key]];
+        });
+        updatePreviews();
+      };
+      img.src = '/sprites/sprites.png';
+    }
+
+    function drawOriginal() {
+      if (!img) return;
+      originalCanvas.width = img.width * scale;
+      originalCanvas.height = img.height * scale;
+      origCtx.imageSmoothingEnabled = false;
+      origCtx.drawImage(img, 0, 0, img.width * scale, img.height * scale);
+
+      // Draw grid overlay
+      origCtx.strokeStyle = 'rgba(255, 255, 0, 0.3)';
+      origCtx.lineWidth = 1;
+      for (let x = 0; x <= img.width; x += 8) {
+        origCtx.beginPath();
+        origCtx.moveTo(x * scale, 0);
+        origCtx.lineTo(x * scale, img.height * scale);
+        origCtx.stroke();
+      }
+      for (let y = 0; y <= img.height; y += 8) {
+        origCtx.beginPath();
+        origCtx.moveTo(0, y * scale);
+        origCtx.lineTo(img.width * scale, y * scale);
+        origCtx.stroke();
+      }
+
+      // Highlight 16x16 grid more prominently
+      origCtx.strokeStyle = 'rgba(0, 255, 255, 0.5)';
+      origCtx.lineWidth = 1;
+      for (let x = 0; x <= img.width; x += 16) {
+        origCtx.beginPath();
+        origCtx.moveTo(x * scale, 0);
+        origCtx.lineTo(x * scale, img.height * scale);
+        origCtx.stroke();
+      }
+      for (let y = 0; y <= img.height; y += 16) {
+        origCtx.beginPath();
+        origCtx.moveTo(0, y * scale);
+        origCtx.lineTo(img.width * scale, y * scale);
+        origCtx.stroke();
+      }
+
+      // Mark sprite area start (x=456)
+      origCtx.strokeStyle = 'rgba(255, 0, 0, 0.8)';
+      origCtx.lineWidth = 2;
+      origCtx.beginPath();
+      origCtx.moveTo(456 * scale, 0);
+      origCtx.lineTo(456 * scale, img.height * scale);
+      origCtx.stroke();
+    }
+
+    function updatePreviews() {
+      const container = document.getElementById('previews');
+      container.innerHTML = '';
+
+      Object.keys(spriteMappings).forEach(type => {
+        const sprites = spriteMappings[type];
+        if (sprites.length === 0) return;
+
+        const div = document.createElement('div');
+        div.innerHTML = `<h3>${type}</h3>`;
+
+        sprites.forEach((sprite, i) => {
+          const preview = document.createElement('div');
+          preview.className = 'preview';
+
+          const canvas = document.createElement('canvas');
+          canvas.width = sprite.w * 4;
+          canvas.height = sprite.h * 4;
+          const ctx = canvas.getContext('2d');
+          ctx.imageSmoothingEnabled = false;
+
+          if (img) {
+            ctx.drawImage(img, sprite.x, sprite.y, sprite.w, sprite.h,
+                         0, 0, sprite.w * 4, sprite.h * 4);
+          }
+
+          const label = document.createElement('span');
+          label.textContent = `${i}: (${sprite.x},${sprite.y})`;
+
+          preview.appendChild(canvas);
+          preview.appendChild(label);
+          div.appendChild(preview);
+        });
+
+        container.appendChild(div);
+      });
+    }
+
+    // Click handler
+    originalCanvas.addEventListener('click', (e) => {
+      const rect = originalCanvas.getBoundingClientRect();
+      const x = Math.floor((e.clientX - rect.left) / scale);
+      const y = Math.floor((e.clientY - rect.top) / scale);
+      const tile8X = Math.floor(x / 8) * 8;
+      const tile8Y = Math.floor(y / 8) * 8;
+      const tile16X = Math.floor(x / 16) * 16;
+      const tile16Y = Math.floor(y / 16) * 16;
+
+      document.getElementById('coords').innerHTML =
+        `Pixel: <b>(${x}, ${y})</b> | 8x8 Tile: <b>(${tile8X}, ${tile8Y})</b> | 16x16 Tile: <b>(${tile16X}, ${tile16Y})</b>`;
+
+      // Highlight clicked area
+      drawOriginal();
+      origCtx.strokeStyle = '#f00';
+      origCtx.lineWidth = 2;
+      origCtx.strokeRect(tile16X * scale, tile16Y * scale, 16 * scale, 16 * scale);
+
+      // Add to current mapping
+      const spriteType = document.getElementById('spriteType').value;
+      const size = spriteType.includes('pellet') ? 8 : 16;
+      const tileX = size === 8 ? tile8X : tile16X;
+      const tileY = size === 8 ? tile8Y : tile16Y;
+
+      spriteMappings[spriteType].push({ x: tileX, y: tileY, w: size, h: size });
+      updateMappingDisplay();
+      updatePreviews();
+    });
+
+    function updateMappingDisplay() {
+      const spriteType = document.getElementById('spriteType').value;
+      const mapping = spriteMappings[spriteType];
+      document.getElementById('currentMapping').innerHTML =
+        `<p>${spriteType}: ${mapping.length} sprites mapped</p>` +
+        `<code>${JSON.stringify(mapping)}</code>`;
+    }
+
+    document.getElementById('clearMapping').addEventListener('click', () => {
+      const spriteType = document.getElementById('spriteType').value;
+      spriteMappings[spriteType] = [];
+      updateMappingDisplay();
+      updatePreviews();
+    });
+
+    document.getElementById('autoDetect').addEventListener('click', () => {
+      Object.keys(autoDetectedSprites).forEach(key => {
+        spriteMappings[key] = [...autoDetectedSprites[key]];
+      });
+      updateMappingDisplay();
+      updatePreviews();
+    });
+
+    document.getElementById('spriteType').addEventListener('change', updateMappingDisplay);
+
+    // Scale slider
+    document.getElementById('scaleSlider').addEventListener('input', (e) => {
+      scale = parseFloat(e.target.value);
+      document.getElementById('scaleValue').textContent = scale + 'x';
+      drawOriginal();
+    });
+
+    // Generate organized sprite sheet
+    document.getElementById('generate').addEventListener('click', () => {
+      // Layout: 16 sprites per row, organized by type
+      const spriteSize = 16;
+      const cols = 16;
+
+      // Calculate rows needed
+      let totalSprites = 0;
+      Object.values(spriteMappings).forEach(sprites => {
+        totalSprites += sprites.length;
+      });
+
+      const rows = Math.ceil(totalSprites / cols) + Object.keys(spriteMappings).length; // Extra rows for separation
+
+      outputCanvas.width = cols * spriteSize;
+      outputCanvas.height = Math.max(rows * spriteSize, 256);
+
+      outCtx.fillStyle = '#000';
+      outCtx.fillRect(0, 0, outputCanvas.width, outputCanvas.height);
+
+      let currentRow = 0;
+      let currentCol = 0;
+
+      const layoutInfo = [];
+
+      Object.entries(spriteMappings).forEach(([type, sprites]) => {
+        if (sprites.length === 0) return;
+
+        // Start new row for each type
+        if (currentCol > 0) {
+          currentRow++;
+          currentCol = 0;
+        }
+
+        const startRow = currentRow;
+        const startCol = currentCol;
+
+        sprites.forEach((sprite, i) => {
+          const destX = currentCol * spriteSize;
+          const destY = currentRow * spriteSize;
+
+          outCtx.drawImage(img, sprite.x, sprite.y, sprite.w, sprite.h,
+                          destX, destY, spriteSize, spriteSize);
+
+          currentCol++;
+          if (currentCol >= cols) {
+            currentCol = 0;
+            currentRow++;
+          }
+        });
+
+        layoutInfo.push({
+          name: type,
+          startX: startCol * spriteSize,
+          startY: startRow * spriteSize,
+          count: sprites.length,
+          frameWidth: spriteSize,
+          frameHeight: spriteSize,
+        });
+
+        // Move to next row after each type
+        currentRow++;
+        currentCol = 0;
+      });
+
+      // Store layout info for code generation
+      window.layoutInfo = layoutInfo;
+      generateCode();
+    });
+
+    function generateCode() {
+      if (!window.layoutInfo) return;
+
+      let code = `// Auto-generated sprite region definitions
+// Generated from sprite extractor tool
+
+private setupSpriteRegions(): void {
+  const atlas = this.spriteAtlas;
+
+`;
+
+      window.layoutInfo.forEach(info => {
+        const columns = Math.min(info.count, 16);
+        code += `  // ${info.name}: ${info.count} frames at (${info.startX}, ${info.startY})
+  atlas.defineGrid('${info.name}', ${info.startX}, ${info.startY}, ${info.frameWidth}, ${info.frameHeight}, ${info.count}, ${columns});
+
+`;
+      });
+
+      code += `}`;
+
+      document.getElementById('codeOutput').textContent = code;
+    }
+
+    document.getElementById('exportCode').addEventListener('click', generateCode);
+
+    document.getElementById('download').addEventListener('click', () => {
+      const link = document.createElement('a');
+      link.download = 'pacman-sprites-organized.png';
+      link.href = outputCanvas.toDataURL('image/png');
+      link.click();
+    });
+
+    // Initialize
+    loadImage();
+    updateMappingDisplay();
+  </script>
+</body>
+</html>

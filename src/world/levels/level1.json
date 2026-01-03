@@ -1,0 +1,63 @@
+{
+  "width": 28,
+  "height": 36,
+  "tiles": [
+    "____________________________",
+    "____________________________",
+    "____________________________",
+    "XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "X............XX............X",
+    "X.XXXX.XXXXX.XX.XXXXX.XXXX.X",
+    "XoXXXX.XXXXX.XX.XXXXX.XXXXoX",
+    "X.XXXX.XXXXX.XX.XXXXX.XXXX.X",
+    "X..........................X",
+    "X.XXXX.XX.XXXXXXXX.XX.XXXX.X",
+    "X.XXXX.XX.XXXXXXXX.XX.XXXX.X",
+    "X......XX....XX....XX......X",
+    "XXXXXX.XXXXX XX XXXXX.XXXXXX",
+    "XXXXXX.XXXXX XX XXXXX.XXXXXX",
+    "XXXXXX.XX          XX.XXXXXX",
+    "XXXXXX.XX XXX--XXX XX.XXXXXX",
+    "XXXXXX.XX X      X XX.XXXXXX",
+    "T     .   X      X   .     T",
+    "XXXXXX.XX X      X XX.XXXXXX",
+    "XXXXXX.XX XXXXXXXX XX.XXXXXX",
+    "XXXXXX.XX          XX.XXXXXX",
+    "XXXXXX.XX XXXXXXXX XX.XXXXXX",
+    "XXXXXX.XX XXXXXXXX XX.XXXXXX",
+    "X............XX............X",
+    "X.XXXX.XXXXX.XX.XXXXX.XXXX.X",
+    "X.XXXX.XXXXX.XX.XXXXX.XXXX.X",
+    "Xo..XX.......  .......XX..oX",
+    "XXX.XX.XX.XXXXXXXX.XX.XX.XXX",
+    "XXX.XX.XX.XXXXXXXX.XX.XX.XXX",
+    "X......XX....XX....XX......X",
+    "X.XXXXXXXXXX.XX.XXXXXXXXXX.X",
+    "X.XXXXXXXXXX.XX.XXXXXXXXXX.X",
+    "X..........................X",
+    "XXXXXXXXXXXXXXXXXXXXXXXXXXXX",
+    "____________________________",
+    "____________________________"
+  ],
+  "noUpTurnZones": [
+    { "x": 12, "y": 11 },
+    { "x": 15, "y": 11 },
+    { "x": 12, "y": 23 },
+    { "x": 15, "y": 23 }
+  ],
+  "tunnelRow": 17,
+  "ghostHouse": {
+    "x": 10,
+    "y": 15,
+    "width": 8,
+    "height": 5
+  },
+  "pacmanStart": { "x": 14, "y": 26 },
+  "ghostStarts": {
+    "blinky": { "x": 14, "y": 14 },
+    "pinky": { "x": 14, "y": 17 },
+    "inky": { "x": 12, "y": 17 },
+    "clyde": { "x": 16, "y": 17 }
+  },
+  "fruitPosition": { "x": 14, "y": 20 }
+}
