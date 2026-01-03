@@ -1,6 +1,6 @@
 # Web Pac-Man
 
-A browser-based Pac-Man clone built with TypeScript and WebGL.
+A browser-based Pac-Man clone built with TypeScript and WebGL. You can play this here https://pac.retrotech71.co.uk
 
 ## What is this?
 
