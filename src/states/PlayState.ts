@@ -12,7 +12,7 @@ import { RenderSystem } from '../systems/RenderSystem';
 import { HUD } from '../ui/HUD';
 import { createPacman, resetPacman } from '../entities/Pacman';
 import { createGhost, resetGhost } from '../entities/Ghost';
-import { eventBus } from '../core/EventBus';
+
 import { HighScoreManager } from '../core/HighScoreManager';
 import { LIVES_START, EXTRA_LIFE_SCORE } from '../utils/constants';
 import { GhostName } from '../utils/types';
@@ -54,7 +54,6 @@ export class PlayState implements State {
 
   private onGameOver: () => void;
   private onMenu: () => void;
-  private scoreSubscription: { unsubscribe: () => void } | null = null;
 
   constructor(
     renderer: WebGLRenderer,
@@ -87,27 +86,13 @@ export class PlayState implements State {
     this.blinky = this.ghosts[0]!;
   }
 
-  private setupEvents(): void {
-    // Unsubscribe from previous subscription if exists
-    if (this.scoreSubscription) {
-      this.scoreSubscription.unsubscribe();
-    }
+  private addScore(points: number): void {
+    this.score += points;
+    this.highScoreManager.updateHighScore(this.score);
 
-    this.scoreSubscription = eventBus.on('score:changed', (data: { score: number }) => {
-      this.score += data.score;
-      this.highScoreManager.updateHighScore(this.score);
-
-      if (!this.extraLifeAwarded && this.score >= EXTRA_LIFE_SCORE) {
-        this.lives++;
-        this.extraLifeAwarded = true;
-      }
-    });
-  }
-
-  private cleanupEvents(): void {
-    if (this.scoreSubscription) {
-      this.scoreSubscription.unsubscribe();
-      this.scoreSubscription = null;
+    if (!this.extraLifeAwarded && this.score >= EXTRA_LIFE_SCORE) {
+      this.lives++;
+      this.extraLifeAwarded = true;
     }
   }
 
@@ -123,11 +108,6 @@ export class PlayState implements State {
     this.resetPositions();
     this.ghostAISystem.reset(this.level);
     this.animationSystem.reset();
-    this.setupEvents();
-  }
-
-  exit(): void {
-    this.cleanupEvents();
   }
 
   private resetPositions(): void {
@@ -186,11 +166,14 @@ export class PlayState implements State {
     this.ghostAISystem.update(this.ghosts, this.pacman, this.blinky, dt);
 
     const pelletResult = this.collisionSystem.checkPelletCollision(this.pacman);
-    if (pelletResult === 'pellet') {
-      this.ghostAISystem.onPelletEaten(this.ghosts);
-    } else if (pelletResult === 'power') {
-      this.ghostAISystem.onPowerPelletEaten(this.ghosts);
-      this.collisionSystem.resetPowerCounter();
+    if (pelletResult) {
+      this.addScore(pelletResult.score);
+      if (pelletResult.type === 'pellet') {
+        this.ghostAISystem.onPelletEaten(this.ghosts);
+      } else if (pelletResult.type === 'power') {
+        this.ghostAISystem.onPowerPelletEaten(this.ghosts);
+        this.collisionSystem.resetPowerCounter();
+      }
     }
 
     if (this.maze.getPelletsRemaining() === 0) {
@@ -207,6 +190,7 @@ export class PlayState implements State {
     if (collisionResult) {
       if (collisionResult.eaten) {
         // Ghost was eaten - pause and show score
+        this.addScore(collisionResult.score);
         this.ghostEatenScore = collisionResult.score;
         this.ghostEatenX = collisionResult.x;
         this.ghostEatenY = collisionResult.y;

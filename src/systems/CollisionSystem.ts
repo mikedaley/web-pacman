@@ -1,7 +1,6 @@
 import { Entity } from '../ecs/Entity';
 import { PositionComponent, GhostComponent, PacmanComponent } from '../ecs/Component';
 import { Maze } from '../world/Maze';
-import { eventBus } from '../core/EventBus';
 import { TILE_SIZE, POINTS, PELLET_PAUSE_FRAMES, POWER_PAUSE_FRAMES } from '../utils/constants';
 import { GhostAISystem } from './GhostAISystem';
 
@@ -13,7 +12,7 @@ export class CollisionSystem {
     this.maze = maze;
   }
 
-  checkPelletCollision(pacman: Entity): 'pellet' | 'power' | null {
+  checkPelletCollision(pacman: Entity): { type: 'pellet' | 'power'; score: number } | null {
     const pos = pacman.get<PositionComponent>('position');
     const pac = pacman.get<PacmanComponent>('pacman');
     if (!pos || !pac) return null;
@@ -22,20 +21,14 @@ export class CollisionSystem {
 
     if (result === 'pellet') {
       pac.pauseFrames = PELLET_PAUSE_FRAMES;
-      eventBus.emit('pellet:eaten', { x: pos.tileX, y: pos.tileY });
-      eventBus.emit('score:changed', { score: POINTS.pellet });
+      return { type: 'pellet', score: POINTS.pellet };
     } else if (result === 'power') {
       pac.pauseFrames = POWER_PAUSE_FRAMES;
       this.ghostsEatenThisPower = 0;
-      eventBus.emit('power:eaten', { x: pos.tileX, y: pos.tileY });
-      eventBus.emit('score:changed', { score: POINTS.power });
+      return { type: 'power', score: POINTS.power };
     }
 
-    if (this.maze.getPelletsRemaining() === 0) {
-      eventBus.emit('level:complete', undefined);
-    }
-
-    return result;
+    return null;
   }
 
   checkGhostCollision(
@@ -70,12 +63,6 @@ export class CollisionSystem {
           ghostAI.transitionToEyes(ghost);
           const points = POINTS.ghost[Math.min(this.ghostsEatenThisPower, 3)] ?? 200;
           this.ghostsEatenThisPower++;
-          eventBus.emit('ghost:eaten', {
-            ghost: ghostComp.name,
-            x: ghostPos.tileX,
-            y: ghostPos.tileY,
-          });
-          eventBus.emit('score:changed', { score: points });
           return { ghost, eaten: true, score: points, x: ghostPos.x, y: ghostPos.y };
         } else if (ghostComp.mode !== 'eaten' && ghostComp.mode !== 'eyes') {
           // Deadly collision with active ghost
