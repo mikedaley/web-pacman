@@ -42,7 +42,15 @@ export class PlayState implements State {
   private readyTimer = 0;
   private deathTimer = 0;
   private levelCompleteTimer = 0;
-  private gameState: 'ready' | 'playing' | 'dying' | 'levelComplete' | 'gameOver' = 'ready';
+  private levelFlashTimer = 0;
+  private levelFlashState = false;
+  private ghostEatenTimer = 0;
+  private ghostEatenScore = 0;
+  private ghostEatenX = 0;
+  private ghostEatenY = 0;
+  private ghostEatenEntity: Entity | null = null;
+  private gameState: 'ready' | 'playing' | 'dying' | 'levelComplete' | 'gameOver' | 'ghostEaten' =
+    'ready';
 
   private onGameOver: () => void;
   private onMenu: () => void;
@@ -142,6 +150,9 @@ export class PlayState implements State {
       case 'levelComplete':
         this.updateLevelComplete(dt);
         break;
+      case 'ghostEaten':
+        this.updateGhostEaten(dt);
+        break;
       case 'gameOver':
         break;
     }
@@ -172,13 +183,27 @@ export class PlayState implements State {
       return;
     }
 
-    const collidedGhost = this.collisionSystem.checkGhostCollision(
+    const collisionResult = this.collisionSystem.checkGhostCollision(
       this.pacman,
       this.ghosts,
       this.ghostAISystem
     );
-    if (collidedGhost && this.collisionSystem.isDeadlyCollision(collidedGhost)) {
-      this.startDeath();
+    if (collisionResult) {
+      if (collisionResult.eaten) {
+        // Ghost was eaten - pause and show score
+        this.ghostEatenScore = collisionResult.score;
+        this.ghostEatenX = collisionResult.x;
+        this.ghostEatenY = collisionResult.y;
+        this.ghostEatenEntity = collisionResult.ghost;
+        // Hide the eaten ghost during score display
+        const sprite = collisionResult.ghost.get<SpriteComponent>('sprite');
+        if (sprite) sprite.visible = false;
+        this.ghostEatenTimer = 1000;
+        this.gameState = 'ghostEaten';
+        return;
+      } else if (this.collisionSystem.isDeadlyCollision(collisionResult.ghost)) {
+        this.startDeath();
+      }
     }
 
     this.animationSystem.updatePacmanSprite(this.pacman);
@@ -244,14 +269,37 @@ export class PlayState implements State {
     }
   }
 
+  private updateGhostEaten(dt: number): void {
+    this.ghostEatenTimer -= dt;
+    if (this.ghostEatenTimer <= 0) {
+      // Make the eaten ghost visible again (now shows as eyes)
+      if (this.ghostEatenEntity) {
+        const sprite = this.ghostEatenEntity.get<SpriteComponent>('sprite');
+        if (sprite) sprite.visible = true;
+        this.ghostEatenEntity = null;
+      }
+      this.gameState = 'playing';
+    }
+  }
+
   private updateLevelComplete(dt: number): void {
     this.levelCompleteTimer -= dt;
+
+    // Flash the maze white
+    this.levelFlashTimer += dt;
+    if (this.levelFlashTimer >= 150) {
+      this.levelFlashTimer = 0;
+      this.levelFlashState = !this.levelFlashState;
+    }
+
     if (this.levelCompleteTimer <= 0) {
       this.level++;
       this.maze.reset();
       this.resetPositions();
       this.ghostAISystem.reset(this.level);
       this.animationSystem.reset();
+      this.levelFlashState = false;
+      this.levelFlashTimer = 0;
       this.gameState = 'ready';
       this.readyTimer = 2000;
     }
@@ -259,11 +307,26 @@ export class PlayState implements State {
 
   render(): void {
     const powerBlink = this.animationSystem.getPowerBlinkState();
+    const mazeFlash = this.gameState === 'levelComplete' && this.levelFlashState;
 
     const visibleEntities =
-      this.gameState === 'dying' ? [this.pacman] : [this.pacman, ...this.ghosts];
+      this.gameState === 'ready'
+        ? []
+        : this.gameState === 'dying'
+          ? [this.pacman]
+          : this.gameState === 'levelComplete'
+            ? [this.pacman]
+            : this.gameState === 'ghostEaten'
+              ? this.ghosts // Hide Pac-Man, show ghosts (eaten one shows score via renderSystem)
+              : [this.pacman, ...this.ghosts];
 
-    this.renderSystem.render(this.maze, visibleEntities, powerBlink);
+    // Pass ghost eaten info to render system
+    const ghostEatenInfo =
+      this.gameState === 'ghostEaten'
+        ? { score: this.ghostEatenScore, x: this.ghostEatenX, y: this.ghostEatenY }
+        : null;
+
+    this.renderSystem.render(this.maze, visibleEntities, powerBlink, mazeFlash, ghostEatenInfo);
 
     this.renderer.beginText();
     this.hud.renderText(this.score, this.highScoreManager.getHighScore());

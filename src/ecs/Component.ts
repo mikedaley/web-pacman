@@ -49,8 +49,6 @@ export interface GhostComponent extends Component {
   targetX: number;
   targetY: number;
   dotCounter: number;
-  elpikedElroy: boolean;
-  elroyLevel: number;
   reverseQueued: boolean;
 }
 

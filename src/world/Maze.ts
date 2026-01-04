@@ -11,7 +11,6 @@ import { Direction, Vec2 } from '../utils/types';
 import { TILE_SIZE } from '../utils/constants';
 import { SpriteBatch } from '../renderer/SpriteBatch';
 import { SpriteAtlas } from '../renderer/SpriteAtlas';
-// import { MAZE_TILE_MAP, EMPTY_TILE_INDEX } from './MazeTiles';
 
 export interface LevelData {
   width: number;
@@ -237,7 +236,7 @@ export class Maze {
     return dirs;
   }
 
-  render(batch: SpriteBatch, atlas: SpriteAtlas): void {
+  render(batch: SpriteBatch, atlas: SpriteAtlas, flash = false): void {
     // Render the entire empty maze as a single image
     // The maze starts at row 3 (after the score/UI area)
     const startRow = 3;
@@ -246,7 +245,9 @@ export class Maze {
 
     const frame = atlas.getFrame('maze-full', 0);
     if (frame) {
-      batch.draw(frame, 0, startRow * TILE_SIZE, mazeWidth, mazeHeight);
+      // Flash white when level complete (boost colors to saturate to white)
+      const tint = flash ? 10 : 1;
+      batch.draw(frame, 0, startRow * TILE_SIZE, mazeWidth, mazeHeight, tint, tint, tint, 1);
     }
   }
 

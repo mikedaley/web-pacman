@@ -46,8 +46,4 @@ export class Engine {
     this.renderFn();
     this.rafId = requestAnimationFrame(this.loop.bind(this));
   }
-
-  isRunning(): boolean {
-    return this.running;
-  }
 }

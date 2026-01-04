@@ -1,7 +1,20 @@
 import { Entity } from '../ecs/Entity';
-import { PositionComponent, VelocityComponent, SpriteComponent, AnimationComponent, GhostComponent, ColliderComponent } from '../ecs/Component';
+import {
+  PositionComponent,
+  VelocityComponent,
+  SpriteComponent,
+  AnimationComponent,
+  GhostComponent,
+  ColliderComponent,
+} from '../ecs/Component';
 import { GhostName, GhostMode, Direction } from '../utils/types';
-import { BASE_SPEED, LEVEL_SPEEDS, GHOST_START_POSITIONS, GHOST_START_PIXELS, SCATTER_TARGETS } from '../utils/constants';
+import {
+  BASE_SPEED,
+  LEVEL_SPEEDS,
+  GHOST_START_POSITIONS,
+  GHOST_START_PIXELS,
+  SCATTER_TARGETS,
+} from '../utils/constants';
 
 export function createGhost(name: GhostName, level = 1): Entity {
   const entity = new Entity();
@@ -58,8 +71,6 @@ export function createGhost(name: GhostName, level = 1): Entity {
     targetX: SCATTER_TARGETS[name].x,
     targetY: SCATTER_TARGETS[name].y,
     dotCounter: 0,
-    elpikedElroy: false,
-    elroyLevel: 0,
     reverseQueued: false,
   };
 
@@ -109,8 +120,6 @@ export function resetGhost(entity: Entity, level = 1): void {
   ghost.targetX = SCATTER_TARGETS[ghost.name].x;
   ghost.targetY = SCATTER_TARGETS[ghost.name].y;
   ghost.dotCounter = 0;
-  ghost.elpikedElroy = false;
-  ghost.elroyLevel = 0;
   ghost.reverseQueued = false;
 
   const sprite = entity.get<SpriteComponent>('sprite');
@@ -148,8 +157,12 @@ export function setGhostMode(entity: Entity, mode: GhostMode, force = false): vo
 
   if (mode === 'frightened') {
     // Can't frighten ghosts that are in house, leaving, eaten, or eyes
-    if (ghost.mode !== 'eyes' && ghost.mode !== 'eaten' &&
-        ghost.mode !== 'inHouse' && ghost.mode !== 'leavingHouse') {
+    if (
+      ghost.mode !== 'eyes' &&
+      ghost.mode !== 'eaten' &&
+      ghost.mode !== 'inHouse' &&
+      ghost.mode !== 'leavingHouse'
+    ) {
       ghost.previousMode = ghost.mode as 'scatter' | 'chase';
       ghost.mode = 'frightened';
       ghost.reverseQueued = true;
@@ -162,8 +175,13 @@ export function setGhostMode(entity: Entity, mode: GhostMode, force = false): vo
     ghost.mode = 'eyes';
   } else if (mode === 'scatter' || mode === 'chase') {
     // Only change mode if ghost is actively in the maze
-    if (ghost.mode !== 'frightened' && ghost.mode !== 'eyes' && ghost.mode !== 'eaten' &&
-        ghost.mode !== 'inHouse' && ghost.mode !== 'leavingHouse') {
+    if (
+      ghost.mode !== 'frightened' &&
+      ghost.mode !== 'eyes' &&
+      ghost.mode !== 'eaten' &&
+      ghost.mode !== 'inHouse' &&
+      ghost.mode !== 'leavingHouse'
+    ) {
       if (ghost.mode !== mode) {
         ghost.reverseQueued = true;
       }

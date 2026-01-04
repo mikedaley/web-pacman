@@ -51,7 +51,16 @@ export class AnimationSystem {
     if (!gc || !sprite) return;
 
     // Ghosts in house, entering, leaving, or eyes have their sprites set by GhostAISystem
-    if (gc.mode === 'inHouse' || gc.mode === 'leavingHouse' || gc.mode === 'enteringHouse' || gc.mode === 'eyes') {
+    // Also reset frameIndex to 0 for eyes mode since eyes sprites only have 1 frame
+    if (
+      gc.mode === 'inHouse' ||
+      gc.mode === 'leavingHouse' ||
+      gc.mode === 'enteringHouse' ||
+      gc.mode === 'eyes'
+    ) {
+      if (gc.mode === 'eyes') {
+        sprite.frameIndex = 0;
+      }
       return;
     }
 

@@ -38,7 +38,11 @@ export class CollisionSystem {
     return result;
   }
 
-  checkGhostCollision(pacman: Entity, ghosts: Entity[], ghostAI: GhostAISystem): Entity | null {
+  checkGhostCollision(
+    pacman: Entity,
+    ghosts: Entity[],
+    ghostAI: GhostAISystem
+  ): { ghost: Entity; eaten: boolean; score: number; x: number; y: number } | null {
     const pacPos = pacman.get<PositionComponent>('position');
     const pacComp = pacman.get<PacmanComponent>('pacman');
     if (!pacPos || !pacComp || pacComp.dying) return null;
@@ -49,7 +53,12 @@ export class CollisionSystem {
       if (!ghostPos || !ghostComp) continue;
 
       // Skip ghosts that are in/entering/leaving the house
-      if (ghostComp.mode === 'inHouse' || ghostComp.mode === 'leavingHouse' || ghostComp.mode === 'enteringHouse') continue;
+      if (
+        ghostComp.mode === 'inHouse' ||
+        ghostComp.mode === 'leavingHouse' ||
+        ghostComp.mode === 'enteringHouse'
+      )
+        continue;
 
       const dx = Math.abs(pacPos.x - ghostPos.x);
       const dy = Math.abs(pacPos.y - ghostPos.y);
@@ -61,12 +70,16 @@ export class CollisionSystem {
           ghostAI.transitionToEyes(ghost);
           const points = POINTS.ghost[Math.min(this.ghostsEatenThisPower, 3)] ?? 200;
           this.ghostsEatenThisPower++;
-          eventBus.emit('ghost:eaten', { ghost: ghostComp.name, x: ghostPos.tileX, y: ghostPos.tileY });
+          eventBus.emit('ghost:eaten', {
+            ghost: ghostComp.name,
+            x: ghostPos.tileX,
+            y: ghostPos.tileY,
+          });
           eventBus.emit('score:changed', { score: points });
-          return ghost;
+          return { ghost, eaten: true, score: points, x: ghostPos.x, y: ghostPos.y };
         } else if (ghostComp.mode !== 'eaten' && ghostComp.mode !== 'eyes') {
           // Deadly collision with active ghost
-          return ghost;
+          return { ghost, eaten: false, score: 0, x: ghostPos.x, y: ghostPos.y };
         }
       }
     }
@@ -78,8 +91,14 @@ export class CollisionSystem {
     const gc = ghost.get<GhostComponent>('ghost');
     if (!gc) return false;
     // Not deadly if frightened, eaten (showing score), eyes (returning), entering, or in house
-    return gc.mode !== 'frightened' && gc.mode !== 'eaten' && gc.mode !== 'eyes' &&
-           gc.mode !== 'inHouse' && gc.mode !== 'leavingHouse' && gc.mode !== 'enteringHouse';
+    return (
+      gc.mode !== 'frightened' &&
+      gc.mode !== 'eaten' &&
+      gc.mode !== 'eyes' &&
+      gc.mode !== 'inHouse' &&
+      gc.mode !== 'leavingHouse' &&
+      gc.mode !== 'enteringHouse'
+    );
   }
 
   resetPowerCounter(): void {

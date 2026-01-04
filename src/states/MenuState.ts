@@ -68,9 +68,12 @@ export class MenuState implements State {
   private chaseX = 0;
   private chasePacmanFrame = 0;
   private chaseGhostFrame = 0;
-  private chasePhase: 'chase' | 'turn' | 'hunt' = 'chase';
+  private chasePhase: 'chase' | 'turn' | 'hunt' | 'score' = 'chase';
   private powerPelletVisible = true;
   private ghostsEaten = 0;
+  private scoreDisplayTimer = 0;
+  private scoreDisplayGhost = -1; // Which ghost's score is being displayed
+  private ghostPositions: number[] = []; // Track individual ghost X positions
 
   constructor(
     renderer: WebGLRenderer,
@@ -102,6 +105,10 @@ export class MenuState implements State {
     this.chaseGhostFrame = 0;
     this.chasePhase = 'chase';
     this.powerPelletVisible = true;
+    this.scoreDisplayTimer = 0;
+    this.scoreDisplayGhost = -1;
+    // Ghosts are closer together and closer to Pac-Man (Pac-Man at chaseX, ghosts start at chaseX + 20)
+    this.ghostPositions = [20, 36, 52, 68];
     this.ghostsEaten = 0;
   }
 
@@ -151,13 +158,18 @@ export class MenuState implements State {
   }
 
   private updateGhostIntro(): void {
-    const stepDuration = 500;
+    // Step 0: ghost appears alone (longer pause)
+    // Step 1: dash appears
+    // Step 2: nickname appears
+    // Step 3: name appears
+    const stepDurations = [800, 400, 400, 400]; // ghost alone is longer
+    const currentDuration = stepDurations[this.ghostIntroStep] || 400;
 
-    if (this.phaseTimer >= stepDuration) {
+    if (this.phaseTimer >= currentDuration) {
       this.phaseTimer = 0;
       this.ghostIntroStep++;
 
-      if (this.ghostIntroStep > 2) {
+      if (this.ghostIntroStep > 3) {
         this.ghostIntroStep = 0;
         this.ghostIntroIndex++;
 
@@ -172,15 +184,16 @@ export class MenuState implements State {
 
   private updateChase(dt: number): void {
     const speed = 0.08 * dt;
+    const ghostSpeed = 0.05 * dt; // Ghosts move slower than Pac-Man
     const pelletX = 32;
 
     if (this.chasePhase === 'chase') {
       this.chaseX -= speed;
+      // Ghosts chase at the same speed during this phase
 
-      // Pac-Man is at chaseX - 80, pellet is at pelletX (32)
+      // Pac-Man is at chaseX, pellet is at pelletX (32)
       // Eat pellet when Pac-Man reaches it
-      const pacmanX = this.chaseX - 80;
-      if (pacmanX <= pelletX && this.powerPelletVisible) {
+      if (this.chaseX <= pelletX && this.powerPelletVisible) {
         this.powerPelletVisible = false;
         this.chasePhase = 'turn';
         this.phaseTimer = 0;
@@ -190,19 +203,39 @@ export class MenuState implements State {
       if (this.phaseTimer >= 200) {
         this.chasePhase = 'hunt';
       }
+    } else if (this.chasePhase === 'score') {
+      // Pause to show score sprite
+      this.scoreDisplayTimer += dt;
+      if (this.scoreDisplayTimer >= 1000) {
+        this.scoreDisplayTimer = 0;
+        this.scoreDisplayGhost = -1;
+        this.chasePhase = 'hunt';
+      }
     } else if (this.chasePhase === 'hunt') {
+      // Pac-Man moves right faster than ghosts flee
       this.chaseX += speed;
 
-      // Pac-Man eats ghosts one by one
-      const pacmanX = this.chaseX - 80;
-      for (let i = this.ghostsEaten; i < 4; i++) {
-        const ghostX = this.chaseX + i * 18;
-        if (pacmanX >= ghostX - 8) {
-          this.ghostsEaten++;
+      // Ghosts flee slower, so their relative positions decrease
+      for (let i = 0; i < 4; i++) {
+        if (i >= this.ghostsEaten) {
+          this.ghostPositions[i]! -= speed - ghostSpeed;
         }
       }
 
-      if (this.chaseX > CANVAS_WIDTH + 100) {
+      // Check if Pac-Man catches the next ghost
+      if (this.ghostsEaten < 4) {
+        const ghostX = this.ghostPositions[this.ghostsEaten]!;
+        // Pac-Man catches ghost when ghost position reaches 0
+        if (ghostX <= 8) {
+          // Freeze positions and show score
+          this.scoreDisplayGhost = this.ghostsEaten;
+          this.ghostsEaten++;
+          this.chasePhase = 'score';
+          this.scoreDisplayTimer = 0;
+        }
+      }
+
+      if (this.ghostsEaten >= 4 && this.chaseX > CANVAS_WIDTH + 50) {
         this.phase = 'points';
         this.phaseTimer = 0;
       }
@@ -334,10 +367,11 @@ export class MenuState implements State {
 
       if (isCurrent) {
         // Animate current ghost's text
-        if (this.ghostIntroStep >= 0) {
+        // Step 0: ghost only, Step 1: dash, Step 2: nickname, Step 3: name
+        if (this.ghostIntroStep >= 1) {
           this.textRenderer.draw('-', 56, y + 4, ghost.color.r, ghost.color.g, ghost.color.b);
         }
-        if (this.ghostIntroStep >= 1) {
+        if (this.ghostIntroStep >= 2) {
           this.textRenderer.draw(
             ghost.nickname,
             72,
@@ -347,7 +381,7 @@ export class MenuState implements State {
             ghost.color.b
           );
         }
-        if (this.ghostIntroStep >= 2) {
+        if (this.ghostIntroStep >= 3) {
           this.textRenderer.draw(
             `"${ghost.name}"`,
             152,
@@ -413,14 +447,16 @@ export class MenuState implements State {
       }
     }
 
+    const scoreRegions = ['score-200', 'score-400', 'score-800', 'score-1600'];
+
     if (this.chasePhase === 'chase') {
       // Pac-Man being chased (facing left)
       const pacFrame = atlas.getFrame('pacman-left', this.chasePacmanFrame);
       if (pacFrame) {
-        batch.draw(pacFrame, this.chaseX - 80, y, 16, 16);
+        batch.draw(pacFrame, this.chaseX, y, 16, 16);
       }
 
-      // Ghosts chasing
+      // Ghosts chasing (closer to Pac-Man)
       for (let i = 0; i < 4; i++) {
         const ghost = GHOST_INTROS[i]!;
         const ghostFrame = atlas.getFrame(
@@ -428,23 +464,37 @@ export class MenuState implements State {
           this.chaseGhostFrame
         );
         if (ghostFrame) {
-          batch.draw(ghostFrame, this.chaseX + i * 18, y, 16, 16);
+          batch.draw(ghostFrame, this.chaseX + this.ghostPositions[i]!, y, 16, 16);
         }
       }
     } else {
-      // Pac-Man hunting (facing right)
-      const pacFrame = atlas.getFrame('pacman-right', this.chasePacmanFrame);
-      if (pacFrame) {
-        batch.draw(pacFrame, this.chaseX - 80, y, 16, 16);
+      // Pac-Man hunting or showing score (facing right)
+      // Hide Pac-Man during score display
+      if (this.chasePhase !== 'score') {
+        const pacFrame = atlas.getFrame('pacman-right', this.chasePacmanFrame);
+        if (pacFrame) {
+          batch.draw(pacFrame, this.chaseX, y, 16, 16);
+        }
       }
 
-      // Frightened/eaten ghosts
+      // Frightened ghosts, eaten ghosts, or score display
       for (let i = 0; i < 4; i++) {
-        if (i < this.ghostsEaten) continue; // Ghost eaten
+        const ghostX = this.chaseX + this.ghostPositions[i]!;
 
-        const ghostFrame = atlas.getFrame('ghost-frightened', this.chaseGhostFrame);
-        if (ghostFrame) {
-          batch.draw(ghostFrame, this.chaseX + i * 18, y, 16, 16);
+        if (i < this.ghostsEaten) {
+          // Ghost already eaten - show nothing (or score if it's the current one)
+          if (i === this.scoreDisplayGhost && this.chasePhase === 'score') {
+            const scoreFrame = atlas.getFrame(scoreRegions[i]!, 0);
+            if (scoreFrame) {
+              batch.draw(scoreFrame, ghostX, y, 16, 16);
+            }
+          }
+        } else {
+          // Ghost still alive - show frightened
+          const ghostFrame = atlas.getFrame('ghost-frightened', this.chaseGhostFrame);
+          if (ghostFrame) {
+            batch.draw(ghostFrame, ghostX, y, 16, 16);
+          }
         }
       }
     }

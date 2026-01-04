@@ -26,18 +26,12 @@ export class TextRenderer {
           y,
           this.charWidth,
           this.charHeight,
-          r, g, b, a
+          r,
+          g,
+          b,
+          a
         );
       }
     }
-  }
-
-  drawCentered(text: string, centerX: number, y: number, r = 1, g = 1, b = 1, a = 1): void {
-    const width = text.length * this.charWidth;
-    this.draw(text, centerX - width / 2, y, r, g, b, a);
-  }
-
-  getTextWidth(text: string): number {
-    return text.length * this.charWidth;
   }
 }

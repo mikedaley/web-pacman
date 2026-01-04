@@ -14,5 +14,5 @@ void main() {
         discard;
     }
 
-    gl_FragColor = texColor * v_color;
+    gl_FragColor = clamp(texColor * v_color, 0.0, 1.0);
 }

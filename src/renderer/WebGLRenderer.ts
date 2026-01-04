@@ -70,22 +70,22 @@ export class WebGLRenderer {
 
     // Pacman sprites - each direction has: wide open, half open, closed at (488, 0)
     atlas.defineRegion('pacman-right', [
-      { u: 488, v: 0, width: 16, height: 16 },  // frame 0: closed
-      { u: 472, v: 0, width: 16, height: 16 },  // frame 1: half open
-      { u: 456, v: 0, width: 16, height: 16 },  // frame 2: wide open
+      { u: 488, v: 0, width: 16, height: 16 }, // frame 0: closed
+      { u: 472, v: 0, width: 16, height: 16 }, // frame 1: half open
+      { u: 456, v: 0, width: 16, height: 16 }, // frame 2: wide open
     ]);
     atlas.defineRegion('pacman-left', [
-      { u: 488, v: 0, width: 16, height: 16 },  // frame 0: closed
+      { u: 488, v: 0, width: 16, height: 16 }, // frame 0: closed
       { u: 472, v: 16, width: 16, height: 16 }, // frame 1: half open
       { u: 456, v: 16, width: 16, height: 16 }, // frame 2: wide open
     ]);
     atlas.defineRegion('pacman-up', [
-      { u: 488, v: 0, width: 16, height: 16 },  // frame 0: closed
+      { u: 488, v: 0, width: 16, height: 16 }, // frame 0: closed
       { u: 472, v: 32, width: 16, height: 16 }, // frame 1: half open
       { u: 456, v: 32, width: 16, height: 16 }, // frame 2: wide open
     ]);
     atlas.defineRegion('pacman-down', [
-      { u: 488, v: 0, width: 16, height: 16 },  // frame 0: closed
+      { u: 488, v: 0, width: 16, height: 16 }, // frame 0: closed
       { u: 472, v: 48, width: 16, height: 16 }, // frame 1: half open
       { u: 456, v: 48, width: 16, height: 16 }, // frame 2: wide open
     ]);
@@ -132,6 +132,12 @@ export class WebGLRenderer {
     atlas.defineRegion('ghost-eyes-up', [{ u: 616, v: 80, width: 16, height: 16 }]);
     atlas.defineRegion('ghost-eyes-down', [{ u: 632, v: 80, width: 16, height: 16 }]);
 
+    // Ghost score values (shown when eating ghosts)
+    atlas.defineRegion('score-200', [{ u: 456, v: 128, width: 16, height: 16 }]);
+    atlas.defineRegion('score-400', [{ u: 472, v: 128, width: 16, height: 16 }]);
+    atlas.defineRegion('score-800', [{ u: 488, v: 128, width: 16, height: 16 }]);
+    atlas.defineRegion('score-1600', [{ u: 504, v: 128, width: 16, height: 16 }]);
+
     // Pellets - from the maze section
     atlas.defineRegion('pellet', [{ u: 8, v: 8, width: 8, height: 8 }]);
     atlas.defineRegion('power-pellet', [{ u: 8, v: 24, width: 8, height: 8 }]);
@@ -148,14 +154,14 @@ export class WebGLRenderer {
 
     // Fruits array for level progression
     atlas.defineRegion('fruits', [
-      { u: 488, v: 48, width: 16, height: 16 },  // cherry
-      { u: 504, v: 48, width: 16, height: 16 },  // strawberry
-      { u: 520, v: 48, width: 16, height: 16 },  // orange
-      { u: 536, v: 48, width: 16, height: 16 },  // apple
-      { u: 552, v: 48, width: 16, height: 16 },  // grapes
-      { u: 568, v: 48, width: 16, height: 16 },  // galaxian
-      { u: 584, v: 48, width: 16, height: 16 },  // bell
-      { u: 600, v: 48, width: 16, height: 16 },  // key
+      { u: 488, v: 48, width: 16, height: 16 }, // cherry
+      { u: 504, v: 48, width: 16, height: 16 }, // strawberry
+      { u: 520, v: 48, width: 16, height: 16 }, // orange
+      { u: 536, v: 48, width: 16, height: 16 }, // apple
+      { u: 552, v: 48, width: 16, height: 16 }, // grapes
+      { u: 568, v: 48, width: 16, height: 16 }, // galaxian
+      { u: 584, v: 48, width: 16, height: 16 }, // bell
+      { u: 600, v: 48, width: 16, height: 16 }, // key
     ]);
   }
 
@@ -197,22 +203,52 @@ export class WebGLRenderer {
     // Row 3: special characters
     const charMap: Record<string, [number, number]> = {
       // Row 0: Letters A-O (positions 0-14)
-      'A': [0, 0], 'B': [1, 0], 'C': [2, 0], 'D': [3, 0],
-      'E': [4, 0], 'F': [5, 0], 'G': [6, 0], 'H': [7, 0],
-      'I': [8, 0], 'J': [9, 0], 'K': [10, 0], 'L': [11, 0],
-      'M': [12, 0], 'N': [13, 0], 'O': [14, 0],
+      A: [0, 0],
+      B: [1, 0],
+      C: [2, 0],
+      D: [3, 0],
+      E: [4, 0],
+      F: [5, 0],
+      G: [6, 0],
+      H: [7, 0],
+      I: [8, 0],
+      J: [9, 0],
+      K: [10, 0],
+      L: [11, 0],
+      M: [12, 0],
+      N: [13, 0],
+      O: [14, 0],
 
       // Row 1: Letters P-Z (positions 0-10) then symbols
-      'P': [0, 1], 'Q': [1, 1], 'R': [2, 1], 'S': [3, 1],
-      'T': [4, 1], 'U': [5, 1], 'V': [6, 1], 'W': [7, 1],
-      'X': [8, 1], 'Y': [9, 1], 'Z': [10, 1],
-      '/': [11, 1], '©': [12, 1],
+      P: [0, 1],
+      Q: [1, 1],
+      R: [2, 1],
+      S: [3, 1],
+      T: [4, 1],
+      U: [5, 1],
+      V: [6, 1],
+      W: [7, 1],
+      X: [8, 1],
+      Y: [9, 1],
+      Z: [10, 1],
+      '!': [11, 1],
+      '©': [12, 1],
 
       // Row 2: Numbers 0-9 (positions 0-9) then symbols
-      '0': [0, 2], '1': [1, 2], '2': [2, 2], '3': [3, 2],
-      '4': [4, 2], '5': [5, 2], '6': [6, 2], '7': [7, 2],
-      '8': [8, 2], '9': [9, 2],
-      '-': [11, 2], '"': [12, 2], '.': [13, 2],
+      '0': [0, 2],
+      '1': [1, 2],
+      '2': [2, 2],
+      '3': [3, 2],
+      '4': [4, 2],
+      '5': [5, 2],
+      '6': [6, 2],
+      '7': [7, 2],
+      '8': [8, 2],
+      '9': [9, 2],
+      '/': [10, 2],
+      '-': [11, 2],
+      '"': [12, 2],
+      '.': [13, 2],
 
       // Space - use empty black area
       ' ': [15, 0],
@@ -270,12 +306,6 @@ export class WebGLRenderer {
   switchToSpriteAtlas(): void {
     this.batch.end();
     this.batch.setAtlas(this.spriteAtlas);
-    this.batch.begin();
-  }
-
-  switchToMazeAtlas(): void {
-    this.batch.end();
-    this.batch.setAtlas(this.mazeAtlas);
     this.batch.begin();
   }
 

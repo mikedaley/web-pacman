@@ -14,11 +14,6 @@ export class HUD {
     this.atlas = atlas;
   }
 
-  render(score: number, lives: number, level: number, highScore: number): void {
-    this.renderText(score, highScore);
-    this.renderSprites(lives, level);
-  }
-
   renderText(score: number, highScore: number): void {
     this.textRenderer.draw('1UP', 24, 0);
     this.textRenderer.draw(this.formatScore(score), 8, 8);
@@ -37,7 +32,7 @@ export class HUD {
 
   private drawLives(lives: number): void {
     const y = 272;
-    for (let i = 0; i < lives - 1; i++) {
+    for (let i = 0; i < lives; i++) {
       const frame = this.atlas.getFrame('pacman-left', 1);
       if (frame) {
         this.batch.draw(frame, 16 + i * 16, y, 16, 16);
@@ -80,9 +75,5 @@ export class HUD {
 
   drawReady(): void {
     this.textRenderer.draw('READY!', 88, 160, 1, 1, 0);
-  }
-
-  drawGameOver(): void {
-    this.textRenderer.draw('GAME OVER', 72, 160, 1, 0, 0);
   }
 }

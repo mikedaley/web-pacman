@@ -1,7 +1,6 @@
 import { Engine } from './core/Engine';
 import { InputManager } from './core/InputManager';
 import { AssetLoader } from './core/AssetLoader';
-import { AudioManager } from './core/AudioManager';
 import { WebGLRenderer } from './renderer/WebGLRenderer';
 import { Maze, LevelData } from './world/Maze';
 import { StateMachine } from './states/StateMachine';
@@ -16,7 +15,6 @@ export class Game {
   private engine: Engine;
   private input: InputManager;
   private assets: AssetLoader;
-  private audio: AudioManager;
   private renderer!: WebGLRenderer;
   private stateMachine: StateMachine;
   private maze!: Maze;
@@ -29,7 +27,6 @@ export class Game {
     this.engine = new Engine();
     this.input = new InputManager();
     this.assets = new AssetLoader();
-    this.audio = new AudioManager(this.assets);
     this.renderer = new WebGLRenderer(canvas);
     this.stateMachine = new StateMachine();
   }
@@ -47,7 +44,6 @@ export class Game {
     });
 
     await this.renderer.init(this.assets);
-    this.audio.init();
 
     this.maze = new Maze(level1Data as LevelData);
 

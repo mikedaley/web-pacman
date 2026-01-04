@@ -97,7 +97,7 @@ export const POINTS = {
 export const TOTAL_PELLETS = 240;
 export const TOTAL_POWER_PELLETS = 4;
 
-export const LIVES_START = 3;
+export const LIVES_START = 4;
 export const EXTRA_LIFE_SCORE = 10000;
 
 export const FRUIT_APPEAR_DOTS = [70, 170];
@@ -139,6 +139,8 @@ export const GHOST_START_POSITIONS = {
 };
 
 export const PACMAN_START = { x: 14, y: 26 };
+// Pac-Man starts dead center of the map (between tiles 13-14)
+export const PACMAN_START_PIXELS = { x: 112, y: 212 };
 
 // direction priority for tie-breaking: up, left, down, right
 export const DIRECTION_PRIORITY = ['up', 'left', 'down', 'right'] as const;

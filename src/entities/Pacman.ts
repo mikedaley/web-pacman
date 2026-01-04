@@ -7,19 +7,17 @@ import {
   PacmanComponent,
   ColliderComponent,
 } from '../ecs/Component';
-import { TILE_SIZE, BASE_SPEED, LEVEL_SPEEDS, PACMAN_START } from '../utils/constants';
-import { tileToPixel } from '../utils/math';
+import { BASE_SPEED, LEVEL_SPEEDS, PACMAN_START, PACMAN_START_PIXELS } from '../utils/constants';
 
 export function createPacman(level = 1): Entity {
   const entity = new Entity();
-  const startPos = tileToPixel(PACMAN_START.x, PACMAN_START.y, TILE_SIZE);
 
   const speedMultiplier = LEVEL_SPEEDS[Math.min(level - 1, LEVEL_SPEEDS.length - 1)]?.pacman ?? 0.8;
 
   const position: PositionComponent = {
     type: 'position',
-    x: startPos.x,
-    y: startPos.y,
+    x: PACMAN_START_PIXELS.x,
+    y: PACMAN_START_PIXELS.y,
     tileX: PACMAN_START.x,
     tileY: PACMAN_START.y,
   };
@@ -33,8 +31,8 @@ export function createPacman(level = 1): Entity {
 
   const sprite: SpriteComponent = {
     type: 'sprite',
-    region: 'pacman-right', // Default facing right (closed mouth)
-    frameIndex: 2, // Closed mouth frame
+    region: 'pacman-right',
+    frameIndex: 0, // Closed mouth (full circle)
     width: 16,
     height: 16,
     flipX: false,
@@ -81,13 +79,12 @@ export function createPacman(level = 1): Entity {
 }
 
 export function resetPacman(entity: Entity, level = 1): void {
-  const startPos = tileToPixel(PACMAN_START.x, PACMAN_START.y, TILE_SIZE);
   const speedMultiplier = LEVEL_SPEEDS[Math.min(level - 1, LEVEL_SPEEDS.length - 1)]?.pacman ?? 0.8;
 
   const pos = entity.get<PositionComponent>('position');
   if (pos) {
-    pos.x = startPos.x;
-    pos.y = startPos.y;
+    pos.x = PACMAN_START_PIXELS.x;
+    pos.y = PACMAN_START_PIXELS.y;
     pos.tileX = PACMAN_START.x;
     pos.tileY = PACMAN_START.y;
   }
@@ -111,7 +108,7 @@ export function resetPacman(entity: Entity, level = 1): void {
   const sprite = entity.get<SpriteComponent>('sprite');
   if (sprite) {
     sprite.region = 'pacman-right';
-    sprite.frameIndex = 2; // Closed mouth
+    sprite.frameIndex = 0; // Closed mouth (full circle)
     sprite.visible = true;
   }
 

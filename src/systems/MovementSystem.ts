@@ -93,11 +93,12 @@ export class MovementSystem {
       newX = currentTileCenter.x;
     }
 
-    // Tunnel wrapping
-    if (newX < -TILE_SIZE / 2) {
-      newX = MAZE_WIDTH * TILE_SIZE - TILE_SIZE / 2;
-    } else if (newX > MAZE_WIDTH * TILE_SIZE - TILE_SIZE / 2) {
-      newX = -TILE_SIZE / 2;
+    // Tunnel wrapping - Pac-Man walks fully off-screen before appearing on other side
+    const tunnelBuffer = TILE_SIZE * 2; // Walk 2 tiles off-screen
+    if (newX < -tunnelBuffer) {
+      newX = MAZE_WIDTH * TILE_SIZE + tunnelBuffer - TILE_SIZE;
+    } else if (newX > MAZE_WIDTH * TILE_SIZE + tunnelBuffer - TILE_SIZE) {
+      newX = -tunnelBuffer;
     }
 
     // Check wall collision - look ahead from current position
