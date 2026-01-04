@@ -54,6 +54,7 @@ export class PlayState implements State {
 
   private onGameOver: () => void;
   private onMenu: () => void;
+  private scoreSubscription: { unsubscribe: () => void } | null = null;
 
   constructor(
     renderer: WebGLRenderer,
@@ -78,8 +79,6 @@ export class PlayState implements State {
 
     this.pacman = createPacman(this.level);
     this.createGhosts();
-
-    this.setupEvents();
   }
 
   private createGhosts(): void {
@@ -89,7 +88,12 @@ export class PlayState implements State {
   }
 
   private setupEvents(): void {
-    eventBus.on('score:changed', (data: { score: number }) => {
+    // Unsubscribe from previous subscription if exists
+    if (this.scoreSubscription) {
+      this.scoreSubscription.unsubscribe();
+    }
+
+    this.scoreSubscription = eventBus.on('score:changed', (data: { score: number }) => {
       this.score += data.score;
       this.highScoreManager.updateHighScore(this.score);
 
@@ -98,6 +102,13 @@ export class PlayState implements State {
         this.extraLifeAwarded = true;
       }
     });
+  }
+
+  private cleanupEvents(): void {
+    if (this.scoreSubscription) {
+      this.scoreSubscription.unsubscribe();
+      this.scoreSubscription = null;
+    }
   }
 
   enter(): void {
@@ -112,6 +123,11 @@ export class PlayState implements State {
     this.resetPositions();
     this.ghostAISystem.reset(this.level);
     this.animationSystem.reset();
+    this.setupEvents();
+  }
+
+  exit(): void {
+    this.cleanupEvents();
   }
 
   private resetPositions(): void {
