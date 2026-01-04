@@ -169,7 +169,7 @@ export class MovementSystem {
     const dir = directionVectors[currentDirection] ?? { x: 0, y: 0 };
 
     let newX = pos.x + dir.x * vel.speed * dtSeconds;
-    let newY = pos.y + dir.y * vel.speed * dtSeconds;
+    const newY = pos.y + dir.y * vel.speed * dtSeconds;
 
     // tunnel wrapping
     if (newX < -TILE_SIZE) {
@@ -203,7 +203,7 @@ export class MovementSystem {
   private getNextTile(tileX: number, tileY: number, dir: Direction): { x: number; y: number } {
     const vec = directionVectors[dir];
     let nx = tileX + vec.x;
-    let ny = tileY + vec.y;
+    const ny = tileY + vec.y;
 
     // wrap
     if (nx < 0) nx = MAZE_WIDTH - 1;

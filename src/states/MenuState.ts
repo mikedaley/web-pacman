@@ -561,7 +561,7 @@ export class MenuState implements State {
     this.textRenderer.draw('50 PTS', comboX + 16, startY + 16);
 
     // Copyright
-    const copyright = '@ 1980 MIDWAY MFG.CO.';
-    this.textRenderer.draw(copyright, centerX(copyright), startY + 40);
+    // const copyright = '@ 1980 MIDWAY MFG.CO.';
+    // this.textRenderer.draw(copyright, centerX(copyright), startY + 40);
   }
 }

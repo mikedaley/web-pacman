@@ -7,7 +7,13 @@ import {
   PacmanComponent,
   ColliderComponent,
 } from '../ecs/Component';
-import { BASE_SPEED, LEVEL_SPEEDS, PACMAN_START, PACMAN_START_PIXELS } from '../utils/constants';
+import {
+  BASE_SPEED,
+  LEVEL_SPEEDS,
+  PACMAN_START,
+  PACMAN_START_PIXELS,
+  PACMAN_ANIM_FRAME_DURATION,
+} from '../utils/constants';
 
 export function createPacman(level = 1): Entity {
   const entity = new Entity();
@@ -45,7 +51,7 @@ export function createPacman(level = 1): Entity {
   const animation: AnimationComponent = {
     type: 'animation',
     frames: [0, 1, 2, 1],
-    frameDuration: 50,
+    frameDuration: PACMAN_ANIM_FRAME_DURATION,
     elapsed: 0,
     loop: true,
     playing: true,
@@ -115,7 +121,7 @@ export function resetPacman(entity: Entity, level = 1): void {
   const anim = entity.get<AnimationComponent>('animation');
   if (anim) {
     anim.frames = [0, 1, 2, 1]; // Normal chomping animation
-    anim.frameDuration = 33;
+    anim.frameDuration = PACMAN_ANIM_FRAME_DURATION;
     anim.elapsed = 0;
     anim.loop = true;
     anim.playing = true;

@@ -16,7 +16,7 @@ export function getInkyTarget(
 
   const vec = directionVectors[pacmanDirection];
   let offsetX = pacmanTileX + vec.x * 2;
-  let offsetY = pacmanTileY + vec.y * 2;
+  const offsetY = pacmanTileY + vec.y * 2;
 
   // original overflow bug
   if (pacmanDirection === 'up') {

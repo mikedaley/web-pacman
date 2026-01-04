@@ -1,0 +1,11 @@
+{
+  "lsp": {
+    "typescript-language-server": {
+      "initialization_options": {
+        "preferences": {
+          "includePackageJsonAutoImports": "auto"
+        }
+      }
+    }
+  }
+}

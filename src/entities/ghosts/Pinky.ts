@@ -14,7 +14,7 @@ export function getPinkyTarget(
 
   const vec = directionVectors[pacmanDirection];
   let targetX = pacmanTileX + vec.x * 4;
-  let targetY = pacmanTileY + vec.y * 4;
+  const targetY = pacmanTileY + vec.y * 4;
 
   // original overflow bug when pacman faces up
   if (pacmanDirection === 'up') {

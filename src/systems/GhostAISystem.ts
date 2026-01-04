@@ -189,7 +189,7 @@ export class GhostAISystem {
 
     // Handle house-related modes
     if (gc.mode === 'inHouse') {
-      this.updateInHouseMovement(ghost, pos, vel, dt);
+      this.updateInHouseMovement(ghost, pos, vel, dt, blinkyTileY);
       return;
     }
 
@@ -223,15 +223,16 @@ export class GhostAISystem {
 
     // Check if we need to make a decision (at or past tile center, haven't decided for this tile yet)
     const lastDecisionTile = this.ghostDecisionTiles.get(ghost.id);
-    const needsDecision = !lastDecisionTile ||
-                          lastDecisionTile.x !== pos.tileX ||
-                          lastDecisionTile.y !== pos.tileY;
+    const needsDecision =
+      !lastDecisionTile || lastDecisionTile.x !== pos.tileX || lastDecisionTile.y !== pos.tileY;
 
     // Check if ghost has reached or passed tile center
     const dir = this.ghostDirections.get(ghost.id) || 'left';
     const vec = directionVectors[dir];
-    const passedCenterX = vec.x > 0 ? pos.x >= tileCenter.x : vec.x < 0 ? pos.x <= tileCenter.x : true;
-    const passedCenterY = vec.y > 0 ? pos.y >= tileCenter.y : vec.y < 0 ? pos.y <= tileCenter.y : true;
+    const passedCenterX =
+      vec.x > 0 ? pos.x >= tileCenter.x : vec.x < 0 ? pos.x <= tileCenter.x : true;
+    const passedCenterY =
+      vec.y > 0 ? pos.y >= tileCenter.y : vec.y < 0 ? pos.y <= tileCenter.y : true;
     const atOrPastCenter = passedCenterX && passedCenterY;
 
     if (needsDecision && atOrPastCenter) {
@@ -285,7 +286,8 @@ export class GhostAISystem {
     ghost: Entity,
     pos: PositionComponent,
     vel: VelocityComponent,
-    dt: number
+    dt: number,
+    blinkyTileY: number
   ): void {
     const gc = ghost.get<GhostComponent>('ghost');
     if (!gc) return;
@@ -295,16 +297,21 @@ export class GhostAISystem {
     const shouldExit = gc.dotCounter >= dotLimit;
 
     if (shouldExit) {
-      // Transition to leaving house mode
-      gc.mode = 'leavingHouse';
-      return;
+      // Pinky can't leave until Blinky has cleared the doorway (tile Y < 14)
+      if (gc.name === 'pinky' && blinkyTileY >= 14) {
+        // Blinky hasn't cleared the doorway yet, keep waiting
+      } else {
+        // Transition to leaving house mode
+        gc.mode = 'leavingHouse';
+        return;
+      }
     }
 
     // Ghost is waiting - bob up and down at their X position
     // Bounce limits for ghosts in the house
     // Ghost sprites are 16x16, so they extend 8px above/below center
     // House interior is roughly y=136 to y=152, so safe centers are 144 +/- 4
-    const bounceTop = 137;    // Upper limit (ghost top edge at 129)
+    const bounceTop = 137; // Upper limit (ghost top edge at 129)
     const bounceBottom = 143; // Lower limit (ghost bottom edge at 151)
     const bounceSpeed = vel.speed * 0.4; // Slower bounce speed
 
@@ -571,7 +578,7 @@ export class GhostAISystem {
     }
 
     // Check if new position would be in a wall or gate (eaten ghosts can pass through gates)
-    let newTile = pixelToTile(newX, newY, TILE_SIZE);
+    const newTile = pixelToTile(newX, newY, TILE_SIZE);
 
     // Wrap tile coordinates for tunnel
     if (newTile.x < 0) newTile.x = MAZE_WIDTH - 1;
@@ -681,8 +688,13 @@ export class GhostAISystem {
       // just reverse direction
       for (const ghost of ghosts) {
         const gc = ghost.get<GhostComponent>('ghost');
-        if (gc && gc.mode !== 'eyes' && gc.mode !== 'eaten' &&
-            gc.mode !== 'inHouse' && gc.mode !== 'leavingHouse') {
+        if (
+          gc &&
+          gc.mode !== 'eyes' &&
+          gc.mode !== 'eaten' &&
+          gc.mode !== 'inHouse' &&
+          gc.mode !== 'leavingHouse'
+        ) {
           gc.reverseQueued = true;
         }
       }

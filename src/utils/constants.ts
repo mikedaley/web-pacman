@@ -100,6 +100,8 @@ export const TOTAL_POWER_PELLETS = 4;
 export const LIVES_START = 4;
 export const EXTRA_LIFE_SCORE = 10000;
 
+export const PACMAN_ANIM_FRAME_DURATION = 60;
+
 export const FRUIT_APPEAR_DOTS = [70, 170];
 
 // frame pause when eating (at 60fps)
