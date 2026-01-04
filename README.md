@@ -12,8 +12,12 @@ I wanted to see how close I could get to recreating the original 1980 arcade gam
 - All four ghosts with their distinct personalities (Blinky chases, Pinky ambushes, Inky is unpredictable, Clyde does his own thing)
 - Scatter/chase mode switching like the arcade
 - Frightened mode when you eat a power pellet
+- Ghost score display (200/400/800/1600) with pause when eating ghosts
 - High score saved to your browser
-- Attract mode on the title screen
+- Attract mode on the title screen with ghost introductions and chase demo
+- Level progression with maze flash between levels
+- Responsive scaling to fit any screen size
+- Tunnel wrapping with proper off-screen movement
 
 ## Controls
 
@@ -38,11 +42,18 @@ npm run build
 
 Output goes to the `dist` folder.
 
+## Deployment
+
+The project includes a GitHub Actions workflow that automatically builds and deploys on push to master. Deployment uses rsync to sync the `dist` folder to the server.
+
+To set up deployment, add your SSH private key as a repository secret named `DEPLOY_SSH_KEY`.
+
 ## Tech
 
 - TypeScript
 - WebGL for rendering
 - Vite for bundling
+- GitHub Actions for CI/CD
 
 No game engine - just raw WebGL with a simple sprite batcher. The ghost AI follows the original arcade logic as closely as I could figure out from various sources online.
 
@@ -52,7 +63,7 @@ The codebase is split into a few main areas:
 
 ### Core (`src/core/`)
 
-Basic engine stuff - the game loop, input handling, asset loading. Nothing fancy, just the plumbing to get everything running. There's an event bus in here too for decoupling things like score updates.
+Basic engine stuff - the game loop, input handling, asset loading, high score management. Nothing fancy, just the plumbing to get everything running.
 
 ### ECS (`src/ecs/`)
 
